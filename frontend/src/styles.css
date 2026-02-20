@@ -238,6 +238,62 @@ button.ghost {
   margin-top: 4px;
 }
 
+.bullet-replacements {
+  margin-top: 8px;
+}
+
+.replacement-item {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 8px;
+  border-left: 3px solid rgba(59, 130, 246, 0.6);
+}
+
+.replacement-item:last-child {
+  margin-bottom: 0;
+}
+
+.replacement-before,
+.replacement-after {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.replacement-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.replacement-content {
+  font-size: 0.88rem;
+  color: #e5e7eb;
+  line-height: 1.5;
+}
+
+.replacement-before .replacement-content {
+  color: #fca5a5;
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+.replacement-after .replacement-content {
+  color: #86efac;
+  font-weight: 500;
+}
+
+.replacement-arrow {
+  margin: 8px 0;
+  font-size: 1.2rem;
+  color: #60a5fa;
+  text-align: center;
+  font-weight: bold;
+}
+
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);

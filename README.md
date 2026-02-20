@@ -33,4 +33,3 @@ This project is an AI-powered web application that helps candidates optimize the
 
 You can run backend and frontend separately during development, then deploy them together behind a reverse proxy or on a PaaS.
 
-# MULTI-AGENT-RESUME-OPTIMIZATION-AND-JOB-MATCHING-SYSTEM-USING-LLM-AGENTS

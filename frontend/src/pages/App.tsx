@@ -14,6 +14,7 @@ const API_BASE_URL = "http://localhost:8000";
 
 export const App: React.FC = () => {
   const [resumeText, setResumeText] = useState("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [result, setResult] = useState<MatchResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,10 +26,20 @@ export const App: React.FC = () => {
     setResult(null);
 
     try {
-      const response = await axios.post<MatchResult>(`${API_BASE_URL}/api/analyze`, {
-        resume_text: resumeText,
-        job_description: jobDescription,
-      });
+      let response;
+      if (resumeFile) {
+        const formData = new FormData();
+        formData.append("resume_file", resumeFile);
+        formData.append("job_description", jobDescription);
+        response = await axios.post<MatchResult>(`${API_BASE_URL}/api/analyze-upload`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else {
+        response = await axios.post<MatchResult>(`${API_BASE_URL}/api/analyze`, {
+          resume_text: resumeText,
+          job_description: jobDescription,
+        });
+      }
       setResult(response.data);
     } catch (err) {
       setError("Something went wrong while analyzing. Please try again.");
@@ -39,6 +50,7 @@ export const App: React.FC = () => {
 
   const handleReset = () => {
     setResumeText("");
+    setResumeFile(null);
     setJobDescription("");
     setResult(null);
     setError(null);
@@ -58,8 +70,21 @@ export const App: React.FC = () => {
         <section className="panel input-panel">
           <h2>1. Upload / Paste Your Resume & Job Description</h2>
           <p className="panel-subtitle">
-            Paste raw text for now. We&apos;ll add PDF parsing on top of this API later.
+            Upload a PDF resume or paste text. The job description is always pasted as text.
           </p>
+
+          <div className="field-group">
+            <label>Upload Resume (PDF, DOCX, or TXT)</label>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,.txt"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                setResumeFile(file);
+              }}
+            />
+            {resumeFile && <p className="panel-subtitle">Selected file: {resumeFile.name}</p>}
+          </div>
 
           <div className="field-group">
             <label>Resume Text</label>
@@ -82,7 +107,10 @@ export const App: React.FC = () => {
           </div>
 
           <div className="actions">
-            <button onClick={handleAnalyze} disabled={loading || !resumeText || !jobDescription}>
+            <button
+              onClick={handleAnalyze}
+              disabled={loading || (!resumeFile && !resumeText) || !jobDescription}
+            >
               {loading ? "Analyzing..." : "Run Multi-Agent Analysis"}
             </button>
             <button className="ghost" onClick={handleReset}>
@@ -146,12 +174,46 @@ export const App: React.FC = () => {
               </div>
 
               <div className="card">
-                <h3>Gap Analysis Agent</h3>
-                <ul className="list">
-                  {result.recommendations.map((rec, idx) => (
-                    <li key={idx}>{rec}</li>
-                  ))}
-                </ul>
+                <h3>Optimal Points (Gap Analysis Agent)</h3>
+                <div className="bullet-replacements">
+                  {result.recommendations.map((rec, idx) => {
+                    // Parse "Instead of: ... Use: ..." format
+                    const parts = rec.split("\n");
+                    let insteadOf = "";
+                    let use = "";
+                    
+                    for (const part of parts) {
+                      if (part.toLowerCase().includes("instead of:")) {
+                        insteadOf = part.replace(/instead of:/i, "").trim();
+                      } else if (part.toLowerCase().includes("use:")) {
+                        use = part.replace(/use:/i, "").trim();
+                      }
+                    }
+                    
+                    // Fallback: if format not recognized, show as-is
+                    if (!insteadOf && !use) {
+                      return (
+                        <div key={idx} className="replacement-item">
+                          <p className="replacement-text">{rec}</p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div key={idx} className="replacement-item">
+                        <div className="replacement-before">
+                          <span className="replacement-label">Instead of:</span>
+                          <span className="replacement-content">{insteadOf || rec}</span>
+                        </div>
+                        <div className="replacement-arrow">→</div>
+                        <div className="replacement-after">
+                          <span className="replacement-label">Use:</span>
+                          <span className="replacement-content">{use || rec}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="card">
